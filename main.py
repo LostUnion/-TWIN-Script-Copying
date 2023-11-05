@@ -1,122 +1,98 @@
 import requests
 import json
-from config import *
 import time
+import argparse
 
+session_1 = requests.Session()
 
-bot_id = 'eb3f747f-422b-4d01-9347-66f051f15686'
-
-def new_snapshot(token, refresh_token, bot_id, bot_name, laravel_token, xSRF_TOKEN, laravel_session):
-    botId = 'eb3f747f-422b-4d01-9347-66f051f15686'
-    url = f"https://tcl.twin24.ai/superadmin/scripts/snapshot/new/{botId}"
-
-    payload = {
-        "comment": f"{bot_name}"
-    }
+def new_snapshot(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, ID, name):
+    URL = f"https://tcl.twin24.ai/superadmin/scripts/snapshot/new/{ID}"
+    
+    payload = {"comment" : name}
     headers = {
         'accept': 'application/json, text/plain, */*',
         'content-type': 'application/json;charset=UTF-8',
-        'x-xsrf-token': f'',
-        'Authorization': f'Bearer {token}',
-        'Cookie': f'XSRF-TOKEN={xSRF_TOKEN};laravel_session={laravel_session};laravel_token={laravel_token}'
-    }
+        'x-xsrf-token': f'{refresh_token}',
+        "Authorization": f'Bearer {token}'
 
-    response = requests.post(url, headers=headers, data=payload)
-    print(f'[{response.status_code}] ERROR')
+    }
+    response = requests.post(URL, headers=headers, data=payload)
+    print(response.status_code)
+    while response.status_code == 500:
+        response = session_1.post(URL, headers=headers, data=payload)
+        time.sleep(5)
+        print(response.status_code)
     
     
-    
-def get_bot_info(token, refresh_token, laravel_token, xSRF_TOKEN, laravel_session):
-    bot_id = '3ca96f95-1767-40c6-8c61-1d9f6d391842'
-    url = f"https://bot.twin24.ai/api/v1/bots/{bot_id}?fields=id,name,companyId"
-    
-    bearer = f'Bearer{token}'
+
+def get_bot_info(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token):
+    URL = f"https://bot.twin24.ai/api/v1/bots/{script}?fields=id,name,companyId"
     
     payload = {}
     headers = {
-        'Authorization': bearer,
-        'Content-Length' : '0'
+        "Authorization": f'Bearer {token}',
+        "Content-Length" : "0"
     }
     
-    response = requests.get(url, headers=headers, data=payload)
+    response = session_1.get(URL, headers=headers, data=payload)
+    response_json = response.json()
     
-    if response.status_code == 200:
-        response_json = response.json()
-        bot_id = response_json.get('id')
-        bot_name = response_json.get('name')
-        get_company_id = response_json.get('companyId')
-        
-        print(f'[{response.status_code}] Компания: {get_company_id} | Сценарий: {bot_name} | ID Сценария: {bot_id}')
-        time.sleep(3)
-        new_snapshot(token, refresh_token, bot_id, bot_name, laravel_token, xSRF_TOKEN, laravel_session)
-
-
-def update_cookies(token, refresh_token):
-    url = "https://tcl.twin24.ai/"
+    ID = response_json.get('id')
+    name = response_json.get('name')
+    companyId = response_json.get('companyId')
+    print(f'Компания: {companyId} | Сценарий: {name} | ID Сценария: {ID}')
+    time.sleep(5)
+    new_snapshot(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, ID, name)
     
-    token = token
-    bearer = f'Bearer{token}'
+
+def update_cookies(token, refresh_token, script):
+    URL = "https://tcl.twin24.ai/"
+    
     payload = {}
+    headers = {"Authorization" : f"Bearer {token}"}
+    response = session_1.get(URL, headers=headers, data=payload)
     
-    headers = {
-        'Authorization': bearer
-    }
-    
-    response = requests.get(url, headers=headers, data=payload)
-    laravel_token = response.cookies.get('laravel_token')
-    xSRF_TOKEN = response.cookies.get('XSRF-TOKEN')
+    XSRF_TOKEN = response.cookies.get('XSRF-TOKEN')
     laravel_session = response.cookies.get('laravel_session')
+    laravel_token = response.cookies.get('laravel_token')
     
-    # print(f'laravel_token = {laravel_token}\nxSRF_TOKEN = {xSRF_TOKEN}\n laravel_session = {laravel_session}')
+    time.sleep(5)
+    get_bot_info(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token)
     
-    if response.status_code == 200:
-        print(f'[{response.status_code}] Updates Cookies')
-        get_bot_info(token, refresh_token, laravel_token, xSRF_TOKEN, laravel_session)
-    
-    while response.status_code != 200:
-        print(f'[{response.status_code}] Updates Cookies')
-        time.sleep(2)
-        if response.status_code == 200:
-            print(f'[{response.status_code}] Updates Cookies')
-            time.sleep(3)
-            get_bot_info(token, refresh_token, laravel_token, xSRF_TOKEN, laravel_session)
-    
-    
-    
-def authentication():
-    url = "https://iam.twin24.ai/api/v1/auth/login"
 
-    payload = json.dumps({
-        "email": twin_email,
-        "password": twin_password,
-        })
-
-    headers = {
-        'accept': 'application/json',
-        'content-type': 'application/json',
-        'Authorization': 'Bearer null'
-    }
-
-    response = requests.request("POST", url, headers=headers, data=payload)
+def authentication(login, password, script):
+    URL = "https://iam.twin24.ai/api/v1/auth/login"
+    
+    payload = json.dumps({"email" : login, "password" : password})
+    
+    headers = {"accept" : "application/json", 
+               "content-type" : "application/json",
+               "Authorization" : f"Bearer null"}
+    
+    
+    response = session_1.post(URL, headers=headers, data=payload)
+    
+    print(f'[{response.status_code}] Successful login to the account {login}')
+    
     token = response.cookies.get('token')
     refresh_token = response.cookies.get('refresh_token')
     
-    if response.status_code == 200:
-        print(f'[{response.status_code}] Authentication {twin_email}')
-        time.sleep(3)
-        update_cookies(token, refresh_token)
-    
-    while response.status_code != 200:
-        print(f'[{response.status_code}] Failed, retrying no')
-        time.sleep(2)
-        if response.status_code == 200:
-            print(f'[{response.status_code}] Authentication {twin_email}')
-            time.sleep(3)
-            update_cookies(token, refresh_token)
-    
-            
+    time.sleep(5)
+    update_cookies(token, refresh_token, script)
+
+def prymary_function(login, password, script, cabinet):
+    authentication(login, password, script)
+
 if __name__ == "__main__":
-    authentication()
-
-
-
+    parser = argparse.ArgumentParser(description='Copying a script from a superadmin')
+    parser.add_argument('-l', '--login', type=str, required=True, help='Your superuser login from the Twin cabinet')
+    parser.add_argument('-p', '--password', type=str, required=True, help='Your superuser password from the Twin cabinet')
+    parser.add_argument('-s', '--script', type=str, help='ID of the script to copy')
+    parser.add_argument('-c', '--cabinet', type=int, help='ID of the cabinet to copy the script to')
+    
+    args = parser.parse_args()
+    prymary_function(args.login,
+                     args.password,
+                     args.script,
+                     args.cabinet)
+    
