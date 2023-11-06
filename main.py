@@ -3,54 +3,46 @@ from requests import RequestException
 import json
 import time
 import argparse
+import io
+from fake_useragent import UserAgent
 
-def new_snapshot(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, UUID, ID, name):
-    # Функция новый снапшот
-    # 1. Аргумент ID передается в URL
-    # 2. Аргумент name передается в payload
-    # 3. Аргументы XSRF_TOKEN, token, laravel_session, laravel_token, UUID передаются в headers запроса
+session = requests.Session()
+session_2 = requests.Session()
+user_agent = UserAgent().random
     
-    '''Далее наблюдается странное поведение сервера 
-    При выводе response.content:
-    status_code 419 c сообщением b'{\n    "message": ""\n}'
-    status_code 500 с сообщением b'{\n    "message": "Server Error"\n}
-    '''
-    
+def new_snapshot(token, refresh_token, script, XSRF_TOKEN, ID, name):
     URL = f"https://tcl.twin24.ai/superadmin/scripts/snapshot/new/{ID}"
     
-    payload = {"comment" : name}
+    payload = {'comment' : name}
     headers = {
         'accept': 'application/json, text/plain, */*',
         'content-type': 'application/json;charset=UTF-8',
+        'User-Agent': user_agent,
         'x-xsrf-token': XSRF_TOKEN,
-        'Authorization': f'Bearer {token}',
-        'Cookies' : f'XSRF-TOKEN={XSRF_TOKEN};laravel_session={laravel_session};laravel_token={laravel_token};sessionid={UUID}'
+        'Authorization': f'Bearer {token}'
     }
+    time.sleep(3)
+    response = session_2.post(URL, headers=headers, json=payload, timeout=1000)
+    StatusCode = response.status_code
     
-    response = requests.post(URL, headers=headers, data=payload)
-    while response.status_code == 500:
-        response = requests.post(URL, headers=headers, data=payload)
+    if StatusCode == 201:
         print(f'[Status {response.status_code}] New snapshot')
-    print(f'[Status {response.status_code}] New snapshot')
-    
-    
+    elif StatusCode == 500:
+        print(f'[Status {response.status_code}] Unexpected error on the server side')
+        update_cookies(token, refresh_token, script)
+        
 
-def get_bot_info(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, UUID):
-    # Функция получения информации о сценарии.
-    # 1. Аргумент token передается в поле Authorization.
-    # 2. При GET запросе с заданными параметрами, в JSON ответе приходят id, name, companyId
-    # 4. Полученные значения записываются в переменные, затем выводятся.
-    # 5. Запускается функция new_snapshot c аргументами token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, UUID, ID, name
-    
+def get_bot_info(token, refresh_token, script, XSRF_TOKEN):
     URL = f"https://bot.twin24.ai/api/v1/bots/{script}?fields=id,name,companyId"
     
     payload = {}
     headers = {
         "Authorization": f'Bearer {token}',
+        'User-Agent': user_agent,
         "Content-Length" : "0"
     }
     
-    response = requests.get(URL, headers=headers, data=payload)
+    response = session_2.get(URL, headers=headers, data=payload, timeout=5)
     response_json = response.json()
     
     ID = response_json.get('id')
@@ -58,54 +50,47 @@ def get_bot_info(token, refresh_token, script, XSRF_TOKEN, laravel_session, lara
     companyId = response_json.get('companyId')
     
     print(f'[Status {response.status_code}] {companyId} | {name} | {ID}')
-    new_snapshot(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, UUID, ID, name)
+    new_snapshot(token, refresh_token, script, XSRF_TOKEN, ID, name)
     
 
 def update_cookies(token, refresh_token, script):
-    # Функция обновления cookies.
-    # 1. Аргумент token передается в поле Authorization.
-    # 2. При GET запросе с заданными параметрами, в cookies ответе приходят laravel_token, XSRF-TOKEN, laravel_session
-    # 3. При GET запросе с заданными параметрами, в headers ответе приходит X-Request-ID
-    # 4. Полученные значения записываются в переменные.
-    # 5. Запускается функция update_cookies c аргументами token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, UUID
-    
     URL = "https://tcl.twin24.ai/"
     
     payload = {}
-    headers = {"Authorization" : f"Bearer {token}"}
-    response = requests.get(URL, headers=headers, data=payload)
+    headers = {
+        'User-Agent': user_agent,
+        "Authorization" : f"Bearer {token}"}
+    
+    response = session.get(URL, headers=headers, data=payload, timeout=5)
     
     XSRF_TOKEN = response.cookies.get('XSRF-TOKEN')
-    laravel_session = response.cookies.get('laravel_session')
-    laravel_token = response.cookies.get('laravel_token')
-    UUID = response.headers.get('X-Request-ID')
+    
+    cookies_dict = [
+        {"domain" : key.domain, "name" : key.name, "path" : key.path, "value" : key.value}
+        for key in session.cookies
+    ]
+    
+    for cookies in cookies_dict:
+        session_2.cookies.set(**cookies)
     
     print(f'[Status {response.status_code}] Update Cookies')
-    get_bot_info(token, refresh_token, script, XSRF_TOKEN, laravel_session, laravel_token, UUID)
+    get_bot_info(token, refresh_token, script, XSRF_TOKEN)
 
 def authentication(login, password, script):
-    
-    # Функция аунтификации.
-    # 1. Аргументы login, password передаются в payload.
-    # 2. При POST запросе с задаными параметрами, в cookies ответе приходят token, refresh_token
-    # 3. Полученные значения записываются в переменные.
-    # 4. Запускается функция update_cookies c аргументами token, refresh_token, script
-    
     URL = "https://iam.twin24.ai/api/v1/auth/login/"
     
     payload = json.dumps({"email" : login, "password" : password})
-    
     headers = {"accept" : "application/json",
                "content-type" : "application/json",
+               'User-Agent': user_agent,
                "Authorization" : f"Bearer null"}
     
-    response = requests.post(URL, headers=headers, data=payload)
-    
-    print(f'[Status {response.status_code}] Successful login to the account {login}')
+    response = requests.post(URL, headers=headers, data=payload, timeout=10)
     
     token = response.cookies.get('token')
     refresh_token = response.cookies.get('refresh_token')
     
+    print(f'[Status {response.status_code}] Successful login to the account {login}')
     update_cookies(token, refresh_token, script)
 
 def prymary_function(login, password, script, cabinet):
