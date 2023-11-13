@@ -4,7 +4,10 @@ from sessions import *
 from requests.exceptions import RequestException
 from agent_train import agent_training
 
-def correct_saving(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId, admin_user_id, email_user, admin_token, admin_refresh_token, admin_xsrf_token):
+
+
+
+def correct_saving(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId, admin_user_id, email_user, admin_token, admin_refresh_token, admin_xsrf_token, admin_larevel_token, admin_larevel_session):
     URL = f"https://bot.twin24.ai/api/v1/bots/{new_botId}?fields=id,name,companyId,agents,nodes"
     
     payload = {}
@@ -14,7 +17,6 @@ def correct_saving(super_token, super_refresh_token, script, cabinet, super_xsrf
     
     res = session_10.get(URL, headers=headers, data=payload, timeout=5)
     
-    print(res.cookies)
     res_json = res.json()
     agent_uuid = res_json.get("agents")
     
@@ -27,9 +29,8 @@ def correct_saving(super_token, super_refresh_token, script, cabinet, super_xsrf
         
     if res.status_code == 200:
         for agent_id in agent_uuid:
-            print(f"[Status {res.status_code}] Starting agent {agent_id} Training")
             time.sleep(2)
-            agent_training(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId, admin_user_id, email_user, admin_token, admin_refresh_token, admin_xsrf_token, agent_id)
-
-    
+            agent_training(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId, admin_user_id, email_user, admin_token, admin_refresh_token, admin_xsrf_token, admin_larevel_token, admin_larevel_session, agent_id)
+            
+            
     
