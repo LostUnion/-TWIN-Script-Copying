@@ -1,10 +1,7 @@
-import time
-import json
-from sessions import *
-from requests.exceptions import RequestException
-from waiting_for_a_new_script import search_for_migrated_script
+from app.sessions import *
+from app.waiting_for_a_new_script import check_script
 
-def shift_snapshot(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid):
+def shift_snapshot(super_token, cabinet, super_xsrf_token, name, uuid):
     URL = f"https://tcl.twin24.ai/superadmin/scripts/snapshot/new/company/{uuid}"
     
     payload = {'company_id' : cabinet}
@@ -27,5 +24,5 @@ def shift_snapshot(super_token, super_refresh_token, script, cabinet, super_xsrf
         session_6.cookies.set(**cookies)
     
     print(f'[Status {res.status_code}] [~] Copying the script "{name}" to the cabinet {cabinet}...')
-    search_for_migrated_script(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId)
+    check_script(super_token, cabinet, super_xsrf_token, name, new_botId)
     

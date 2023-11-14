@@ -1,11 +1,9 @@
-import time
-import json
-from sessions import *
-from requests.exceptions import RequestException
-from move_snapshot import shift_snapshot
+from app.sessions import *
+from app.move_snapshot import shift_snapshot
 
 def snapshot(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name):
-    from update_cookies import cookies_update
+    
+    
     URL = f"https://tcl.twin24.ai/superadmin/scripts/snapshot/new/{script}"
     
     payload = {'comment' : name}
@@ -31,6 +29,7 @@ def snapshot(super_token, super_refresh_token, script, cabinet, super_xsrf_token
             session_5.cookies.set(**cookies)
 
         print(f'[Status {res.status_code}] [+] A new snapshot has been created')
-        shift_snapshot(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid)
+        shift_snapshot(super_token, cabinet, super_xsrf_token, name, uuid)
     else:
+        from app.update_cookies import cookies_update
         cookies_update(super_token, super_refresh_token, script, cabinet)

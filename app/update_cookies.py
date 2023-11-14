@@ -1,8 +1,6 @@
 import time
-import json
-from sessions import *
-from requests.exceptions import RequestException
-from get_script_info import get_info_script
+from app.sessions import *
+from app.get_script_info import get_info_script
 
 def cookies_update(super_token, super_refresh_token, script, cabinet):
     global update_cookies_called

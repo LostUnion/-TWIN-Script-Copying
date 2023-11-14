@@ -1,13 +1,8 @@
-import time
-import json
-from sessions import *
-from requests.exceptions import RequestException
-from new_snapshot import snapshot
-
-
+from app.sessions import *
+from app.new_snapshot import snapshot
 
 def get_info_script(super_token, super_refresh_token, script, cabinet, super_xsrf_token):
-    from update_cookies import cookies_update
+    from app.update_cookies import cookies_update
     global get_script_info_called
     URL = f"https://bot.twin24.ai/api/v1/bots/{script}?fields=id,name,companyId"
     

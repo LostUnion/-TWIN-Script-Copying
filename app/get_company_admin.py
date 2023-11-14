@@ -1,10 +1,7 @@
-import time
-import json
-from sessions import *
-from requests.exceptions import RequestException
-from impersonate_as_admin import login_as_admin
+from app.sessions import *
+from app.impersonate_as_admin import login_as_admin
 
-def get_admin_info(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId):
+def get_admin_info(super_token, cabinet, super_xsrf_token, new_botId):
     URL = f"https://iam.twin24.ai/api/v1/users?companyId={cabinet}"
     
     payload = {}
@@ -33,4 +30,4 @@ def get_admin_info(super_token, super_refresh_token, script, cabinet, super_xsrf
             session_8.cookies.set(**cookies)  
         
     print(f"[Status {res.status_code}] Company administrator found | ID: {admin_user_id} email: {email_user}")
-    login_as_admin(super_token, super_refresh_token, script, cabinet, super_xsrf_token, name, uuid, new_botId, admin_user_id, email_user)
+    login_as_admin(super_token, super_xsrf_token, new_botId, admin_user_id, email_user)

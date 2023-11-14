@@ -13,7 +13,6 @@ session_9 = requests.Session()
 session_10 = requests.Session()
 session_11 = requests.Session()
 session_12 = requests.Session()
-session_13 = requests.Session()
 
 user_agent = UserAgent().random
 
