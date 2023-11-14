@@ -43,6 +43,7 @@ pip install -r requirements.txt
 <div align="center">
 
 Libraries in this project
+
 [![Python](https://img.shields.io/badge/Python-3.12-brightgreen?logo=python&color=orange)](https://www.python.org/downloads/) [![Requests](https://img.shields.io/badge/Requests-2.31-brightgreen?logo=Requests&color=green)](https://requests.readthedocs.io/en/latest/) [![Selenium](https://img.shields.io/badge/Selenium-4.15-brightgreen?logo=selenium&color=green
 )](https://www.selenium.dev/)
 

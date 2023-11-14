@@ -13,7 +13,6 @@ async def animate_loading():
 
 async def check_status(loading_task, super_token, cabinet, super_xsrf_token, name, new_botId):
     while True:
-        # ваш код check_status
         URL = f"https://bot.twin24.ai/api/v1/bots/{new_botId}"
         payload = {}
         headers = {
@@ -33,8 +32,6 @@ async def check_status(loading_task, super_token, cabinet, super_xsrf_token, nam
                 session_7.cookies.set(**cookies)
             
             get_admin_info(super_token, cabinet, super_xsrf_token, new_botId)
-            
-            # Отмена выполнения loading_task
             loading_task.cancel()
             break
         elif res.status_code == 404:
